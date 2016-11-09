@@ -1,5 +1,5 @@
 module Control.Monad.Cursor
-    ( MonadQuota
+    ( MonadQuota(..)
     , Quota(..)
     , QuotaError(..)
     , QuotaCursorT(..)
@@ -34,8 +34,8 @@ setQuota r t = do
 
 checkQuota :: (MonadState Quota m, MonadThrow m) => Int -> Int -> m ()
 checkQuota r t = do
-    when (r <= 0) $ throwM RecurseError
-    when (t <= 0) $ throwM TraverseError
+    when (r < 0) $ throwM RecurseError
+    when (t < 0) $ throwM TraverseError
     return ()
 
 class (Monad m) => MonadQuota m where
