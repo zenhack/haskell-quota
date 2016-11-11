@@ -1,10 +1,10 @@
 module Main where
 
 import Data.Maybe (fromJust)
-import Control.Monad.Cursor
+import Control.Monad.Quota
     ( Quota(..)
     , QuotaError(..)
-    , QuotaCursorT(..)
+    , QuotaLimitT(..)
     , MonadQuota(..)
     )
 import Control.Monad.State (State, runState, StateT(..), runStateT, put, get)
@@ -59,10 +59,10 @@ main = defaultMain
     ]
 
 -- TODO: these should go in the library somewhere, not here in the test suite.
-type QuotaM a = QuotaCursorT (CatchT (State Quota)) a
+type QuotaM a = QuotaLimitT (CatchT (State Quota)) a
 
 liftQuotaM ::a -> QuotaM a
-liftQuotaM x = QuotaCursorT (CatchT $ return (Right x))
+liftQuotaM x = QuotaLimitT (CatchT $ return (Right x))
 
 runPure :: QuotaM a -> Quota -> (Either SomeException a, Quota)
-runPure qm q = runState (runCatchT $ runQuotaCursorT qm) q
+runPure qm q = runState (runCatchT $ runQuotaLimitT qm) q

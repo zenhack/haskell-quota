@@ -1,8 +1,8 @@
-module Control.Monad.Cursor
+module Control.Monad.Quota
     ( MonadQuota(..)
     , Quota(..)
     , QuotaError(..)
-    , QuotaCursorT(..)
+    , QuotaLimitT(..)
     ) where
 
 import Control.Monad (when)
@@ -42,21 +42,21 @@ class (Monad m) => MonadQuota m where
     recurse :: m a -> m a
     invoice :: Int -> m ()
 
-newtype QuotaCursorT m a =
-    QuotaCursorT { runQuotaCursorT :: m a }
+newtype QuotaLimitT m a =
+    QuotaLimitT { runQuotaLimitT :: m a }
     deriving(Monad,Functor,Applicative)
 
-instance MonadTrans QuotaCursorT where
-    lift = QuotaCursorT
+instance MonadTrans QuotaLimitT where
+    lift = QuotaLimitT
 
-instance MonadState Quota m => MonadState Quota (QuotaCursorT m) where
+instance MonadState Quota m => MonadState Quota (QuotaLimitT m) where
     put = lift . put
     get = lift get
 
-instance MonadThrow m => MonadThrow (QuotaCursorT m) where
+instance MonadThrow m => MonadThrow (QuotaLimitT m) where
     throwM = lift . throwM
 
-instance (MonadState Quota m, MonadThrow m) => MonadQuota (QuotaCursorT m) where
+instance (MonadState Quota m, MonadThrow m) => MonadQuota (QuotaLimitT m) where
     recurse cursor = do
         Quota r t <- getQuota
         setQuota (r - 1) (t - 1)

@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:
-    Control.Monad.Cursor
+    Control.Monad.Quota
   -- other-modules:
   default-extensions:
     FlexibleContexts,
