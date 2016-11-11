@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:
-    Control.Monad.Quota
+    Control.Monad.Quota,
+    Control.Monad.Quota.Pure
   -- other-modules:
   default-extensions:
     FlexibleContexts,
