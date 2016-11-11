@@ -22,4 +22,4 @@ pureBase :: a -> PureBase a
 pureBase x = CatchT $ return (Right x)
 
 runPure :: PureBase a -> Quota -> (Either SomeException a, Quota)
-runPure mq = runState (runCatchT $ mq)
+runPure mq = runState (runCatchT mq)
