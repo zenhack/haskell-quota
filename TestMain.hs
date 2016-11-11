@@ -22,22 +22,23 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (oneof)
 
+arbitraryNat = abs <$> arbitrary
 
 instance Arbitrary Op where
     arbitrary = oneof [ pure Return
                       , Recurse <$> arbitrary
-                      , Invoice <$> (abs <$> arbitrary) <*> arbitrary
+                      , Invoice <$> arbitraryNat <*> arbitrary
                       ]
 
 instance Arbitrary Quota where
-    arbitrary = Quota <$> arbitrary <*> arbitrary
+    arbitrary = Quota <$> arbitraryNat <*> arbitraryNat
 
 -- | predicate which denotes whether the parts of the result are consistent.
 -- An error should be flagged if and only if the quota has been used up.
 isConsistent :: (Either QuotaError a, Quota) -> Bool
 isConsistent (Left RecurseError, q) | recurseLimit q < 0 = True
 isConsistent (Left TraverseError, q) | traverseLimit q < 0 = True
-isConsistent (Right _, q) | recurseLimit q > 0 && traverseLimit q >= 0 = True
+isConsistent (Right _, q) | recurseLimit q > 0 && traverseLimit q > 0 = True
 isConsistent _ = False
 
 propQuotaIsConsistent :: Quota -> Op -> Bool
