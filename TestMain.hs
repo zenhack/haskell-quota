@@ -33,16 +33,9 @@ instance Arbitrary Op where
 instance Arbitrary Quota where
     arbitrary = Quota <$> arbitraryNat <*> arbitraryNat
 
--- | predicate which denotes whether the parts of the result are consistent.
--- An error should be flagged if and only if the quota has been used up.
-isConsistent :: (Either QuotaError a, Quota) -> Bool
-isConsistent (Left RecurseError, q) | recurseLimit q < 0 = True
-isConsistent (Left TraverseError, q) | traverseLimit q < 0 = True
-isConsistent (Right _, q) | recurseLimit q > 0 && traverseLimit q > 0 = True
-isConsistent _ = False
+type Result = (Either QuotaError (), Quota)
 
-
-runQuotaOp :: Quota -> Op -> (Either QuotaError (), Quota)
+runQuotaOp :: Quota -> Op -> Result
 runQuotaOp q op = fixExn $
     runPure (runQuotaLimitT (runOp op) >>= pureBase) q
   where
@@ -50,10 +43,11 @@ runQuotaOp q op = fixExn $
     fixExn (Left err, s) = (Left $ fromJust $ fromException err, s)
     fixExn (Right x, s) = (Right x, s)
 
-propIsConsistent q op = isConsistent $ runQuotaOp q op
+resultProp :: (Result -> Bool) -> Quota -> Op -> Bool
+resultProp p q op = p (runQuotaOp q op)
 
 main :: IO ()
 main = defaultMain
-    [ testProperty "Any sequence of quota operations is consistent."
-      propIsConsistent
+    [ testProperty "No sequence of operations reduces the quotas below zero."
+      (resultProp (\(_, Quota r t) -> r >= 0 && t >= 0))
     ]
