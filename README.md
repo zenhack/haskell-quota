@@ -11,9 +11,9 @@ case, you need a way to track and limit the resource usage.
 The core of the library is a type class, `MonadQuota`:
 
 ```haskell
-class (Monad m) => MonadQuota m where
+class (Ord n, Num n, Monad m) => MonadQuota m | m -> n where
     recurse :: m a -> m a
-    invoice :: Int -> m ()
+    invoice :: n -> m ()
 ````
 
 ...and a monad transformer `QuotaLimitT`, which implements MonadQuota on

@@ -13,24 +13,24 @@ import Test.QuickCheck.Gen (oneof)
 
 arbitraryNat = abs <$> arbitrary
 
-instance Arbitrary Op where
+instance Arbitrary (Op Int) where
     arbitrary = oneof [ Recurse <$> arbitrary
                       , Invoice <$> arbitraryNat
                       ]
 
-instance Arbitrary Quota where
+instance Arbitrary (Quota Int) where
     arbitrary = Quota <$> arbitraryNat <*> arbitraryNat
 
-type Result = (Either QuotaError (), Quota)
+type Result = (Either QuotaError (), Quota Int)
 
-runQuotaOps :: Quota -> [Op] -> Result
+runQuotaOps :: Quota Int -> [Op Int] -> Result
 runQuotaOps q ops = fixExn $ runQuotaLimit (interpOps ops) q
   where
-    fixExn :: (Either SomeException (), Quota) -> Result
+    fixExn :: (Either SomeException (), Quota Int) -> Result
     fixExn (Left err, s) = (Left $ fromJust $ fromException err, s)
     fixExn (Right x, s) = (Right x, s)
 
-resultProp :: (Result -> Bool) -> Quota -> [Op] -> Bool
+resultProp :: (Result -> Bool) -> Quota Int -> [Op Int] -> Bool
 resultProp p q ops = p (runQuotaOps q ops)
 
 main :: IO ()

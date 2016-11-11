@@ -26,7 +26,8 @@ library
     FlexibleInstances,
     GeneralizedNewtypeDeriving,
     MultiParamTypeClasses,
-    UndecidableInstances
+    UndecidableInstances,
+    FunctionalDependencies
   build-depends:
     base >=4.9 && <4.10,
     exceptions >=0.8 && <0.9,
@@ -43,7 +44,8 @@ test-suite the-testsuite
     FlexibleInstances,
     GeneralizedNewtypeDeriving,
     MultiParamTypeClasses,
-    UndecidableInstances
+    UndecidableInstances,
+    FunctionalDependencies
   build-depends:
     base >=4.9 && <4.10,
     exceptions >=0.8 && <0.9,

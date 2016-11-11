@@ -16,14 +16,14 @@ import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Typeable (Typeable)
 
-class (Monad m) => MonadQuota m where
+class (Ord n, Num n, Monad m) => MonadQuota n m | m -> n where
     recurse :: m a -> m a
-    invoice :: Int -> m ()
+    invoice :: n -> m ()
 
 -- | A quota to be imposed on a computation
-data Quota = Quota
-    { recurseLimit :: Int -- Maximum recursion depth
-    , traverseLimit :: Int -- Total traversal limit
+data Quota n = Quota
+    { recurseLimit :: n -- Maximum recursion depth
+    , traverseLimit :: n -- Total traversal limit
     } deriving(Show)
 
 -- | Thrown when a quota limit is exceeded.
@@ -41,14 +41,14 @@ newtype QuotaLimitT m a =
 instance MonadTrans QuotaLimitT where
     lift = QuotaLimitT
 
-instance MonadState Quota m => MonadState Quota (QuotaLimitT m) where
+instance MonadState (Quota n) m => MonadState (Quota n) (QuotaLimitT m) where
     put = lift . put
     get = lift get
 
 instance MonadThrow m => MonadThrow (QuotaLimitT m) where
     throwM = lift . throwM
 
-instance (MonadState Quota m, MonadThrow m) => MonadQuota (QuotaLimitT m) where
+instance (Ord n, Num n, MonadState (Quota n) m, MonadThrow m) => MonadQuota n (QuotaLimitT m) where
     recurse cursor = do
         Quota r t <- getQuota
         setQuota (r - 1) (t - 1)
@@ -63,18 +63,18 @@ instance (MonadState Quota m, MonadThrow m) => MonadQuota (QuotaLimitT m) where
 
 -- Helpers for MonadQuota (QuotaLimitT m):
 
-getQuota :: (MonadState Quota m, MonadThrow m) => m Quota
+getQuota :: (Ord n, Num n, MonadState (Quota n) m, MonadThrow m) => m (Quota n)
 getQuota = do
     q@(Quota r t) <- get
     checkQuota r t
     return q
 
-setQuota :: (MonadState Quota m, MonadThrow m) => Int -> Int -> m ()
+setQuota :: (Ord n, Num n, MonadState (Quota n) m, MonadThrow m) => n -> n -> m ()
 setQuota r t = do
     checkQuota r t
     put $ Quota r t
 
-checkQuota :: (MonadState Quota m, MonadThrow m) => Int -> Int -> m ()
+checkQuota :: (Ord n, Num n, MonadState (Quota n) m, MonadThrow m) => n -> n -> m ()
 checkQuota r t = do
     when (r < 0) $ throwM RecurseError
     when (t < 0) $ throwM TraverseError

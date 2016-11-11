@@ -16,19 +16,20 @@ import Control.Monad.State (State, runState, StateT, runStateT)
 
 -- | Datatype representation of the operations supported by MonadQuota.
 -- Useful for testing.
-data Op
-    = Recurse [Op]
-    | Invoice Int
+data Op n
+    = Recurse [Op n]
+    | Invoice n
     deriving(Show)
 
-interpOps :: (MonadQuota m) => [Op] -> m ()
+interpOps :: (MonadQuota n m) => [Op n] -> m ()
 interpOps [] = return ()
-interpOps (Recurse ops:ops') = recurse (interpOps ops) >> interpOps ops'
+interpOps (Recurse ops:ops') =
+    recurse (interpOps ops) >> interpOps ops'
 interpOps (Invoice n:ops) = invoice n >> interpOps ops
 
-type CatchStateT m = CatchT (StateT Quota m)
-type CatchState = CatchStateT Identity
-type QuotaLimit = QuotaLimitT CatchState
+type CatchStateT n m = CatchT (StateT (Quota n) m)
+type CatchState n = CatchStateT n Identity
+type QuotaLimit n = QuotaLimitT (CatchState n)
 
 runCatchStateT = runStateT  . runCatchT
 runCatchState = runState . runCatchT
