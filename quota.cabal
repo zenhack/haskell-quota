@@ -18,16 +18,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:
-    Control.Monad.Quota,
-    Control.Monad.Quota.Pure
+    Control.Monad.Quota
   -- other-modules:
-  default-extensions:
-    FlexibleContexts,
-    FlexibleInstances,
-    GeneralizedNewtypeDeriving,
-    MultiParamTypeClasses,
-    UndecidableInstances,
-    FunctionalDependencies
   build-depends:
     base >=4.9 && <4.10,
     exceptions >=0.8 && <0.9,
@@ -39,13 +31,6 @@ library
 test-suite the-testsuite
   type: exitcode-stdio-1.0
   main-is: TestMain.hs
-  default-extensions:
-    FlexibleContexts,
-    FlexibleInstances,
-    GeneralizedNewtypeDeriving,
-    MultiParamTypeClasses,
-    UndecidableInstances,
-    FunctionalDependencies
   build-depends:
     base >=4.9 && <4.10,
     exceptions >=0.8 && <0.9,
