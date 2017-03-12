@@ -11,22 +11,19 @@ import Test.QuickCheck.Gen (oneof, Gen)
 
 arbitraryNat = abs <$> arbitrary
 
-data QuotaOp = Recurse QuotaOp
-             | Invoice Int
+data QuotaOp = Invoice Int
              | Then QuotaOp QuotaOp
              deriving(Show, Eq)
 
 instance Arbitrary QuotaOp where
-    arbitrary = oneof [ Recurse <$> arbitrary
-                      , Invoice <$> arbitraryNat
+    arbitrary = oneof [ Invoice <$> arbitraryNat
                       , Then <$> arbitrary <*> arbitrary
                       ]
 
 instance Arbitrary Quota where
-    arbitrary = Quota <$> arbitraryNat <*> arbitraryNat
+    arbitrary = Quota <$> arbitraryNat
 
 interpQuotaOp :: QuotaOp -> QuotaT (CatchT Identity) ()
-interpQuotaOp (Recurse qo) = recurse (interpQuotaOp qo)
 interpQuotaOp (Invoice n)  = invoice n
 interpQuotaOp (Then x y)   = interpQuotaOp x >> interpQuotaOp y
 
@@ -36,9 +33,8 @@ runPureQuota qt q = runIdentity $ runCatchT $ runQuotaT qt q
 noNegativeQuotas :: QuotaOp -> Quota -> Bool
 noNegativeQuotas qo q = case runPureQuota (interpQuotaOp qo) q of
     Left _ -> True
-    Right ((), q')
-        | recursionLimit q' < 0 -> False
-        | traversalLimit q' < 0 -> False
+    Right ((), Quota q')
+        | q' < 0 -> False
         | otherwise -> True
 
 main :: IO ()

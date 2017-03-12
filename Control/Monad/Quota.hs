@@ -8,23 +8,18 @@ import Control.Monad.Catch (throwM, MonadThrow, Exception)
 import Control.Monad (when)
 
 data QuotaError
-    = TraversalQuotaError
-    | RecursionQuotaError
+    = QuotaError
     deriving(Show, Eq)
 
 instance Exception QuotaError
 
-data Quota = Quota
-    { recursionLimit :: Int
-    , traversalLimit :: Int
-    } deriving(Show, Eq)
+data Quota = Quota Int
+           deriving(Show, Eq)
 
 class MonadQuota m where
     invoice :: Int -> m ()
-    recurse :: m a -> m a
 
 newtype QuotaT m a = QuotaT { runQuotaT :: Quota -> m (a, Quota) }
-
 
 instance (Monad m) => Monad (QuotaT m) where
     return x = QuotaT $ \q -> return (x, q)
@@ -33,18 +28,9 @@ instance (Monad m) => Monad (QuotaT m) where
         runQuotaT (f ret) q'
 
 instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
-    invoice n = QuotaT $ \q -> do
-        let tlim = traversalLimit q
-        when (n > tlim) $ throwM TraversalQuotaError
-        return ((), q { traversalLimit = tlim - n })
-    recurse (QuotaT m) = do
-        invoice 1
-        QuotaT $ \q -> do
-            let rlim = recursionLimit q
-            when (rlim < 1) $ throwM RecursionQuotaError
-            (ret, q') <- m $ q { recursionLimit = rlim - 1 }
-            return (ret, q' { recursionLimit = rlim })
-
+    invoice n = QuotaT $ \(Quota q) -> do
+        when (n > q) $ throwM QuotaError
+        return ((), Quota (q - n))
 
 -- These are just the standard ways of derving Applicative & Functor
 -- from Monad; nothing quota-specific going on here:

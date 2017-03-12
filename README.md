@@ -11,24 +11,15 @@ case, you need a way to track and limit the resource usage.
 The core of the library is a type class, `MonadQuota`:
 
 ```haskell
-class (Ord n, Num n, Monad m) => MonadQuota m | m -> n where
-    recurse :: m a -> m a
-    invoice :: n -> m ()
+class MonadQuota m where
+    invoice :: Int -> m ()
 ````
 
-...and a monad transformer `QuotaLimitT`, which implements MonadQuota on
-top of MonadThrow and MonadState.
+...and a monad transformer `QuotaT`, which implements MonadQuota on
+top of MonadThrow.
 
-The QuotaLimitT keeps track of two quotas:
-
-1. Recursion limit
-2. Total quota usage
-
-`recurse` runs it's argument with a reduced recursion limit, and reduces
-the total quota by 1. this is useful for avoiding overflowing the call
-stack. `invoice` permanently reduces the total quota by it's argument.
-If either quota is violated, an error is signaled and the computation is
-stopped.
+The QuotaT keeps track of a quota, calling `throwM QuotaError` if it is
+expended. `invoice` deducts its argument from the quota.
 
 This was originally developed for use with [haskell-capnp][1], which
 needs to deal with inputs where naive traversal could cause a DoS
