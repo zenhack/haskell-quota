@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,
+    UndecidableInstances #-}
 module Control.Monad.Quota where
 
 -- NOTE: QuotaT basically re-implements the state monad internally. I
@@ -7,6 +9,8 @@ module Control.Monad.Quota where
 import Control.Monad.Catch (throwM, MonadThrow, Exception)
 import Control.Monad (when)
 import Control.Monad.Trans.Class (MonadTrans(..))
+
+import Control.Monad.State (MonadState(..))
 
 data QuotaError
     = QuotaError
@@ -51,3 +55,11 @@ instance (Monad m) => Applicative (QuotaT m) where
         return (f' x')
 instance (Monad m, Applicative m) => Functor (QuotaT m) where
     fmap f q = pure f <*> q
+
+
+-- Misc. mtl type class instances:
+
+instance MonadState s m => MonadState s (QuotaT m) where
+    get = lift get
+    put = lift . put
+    state = lift . state
