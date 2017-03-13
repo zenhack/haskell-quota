@@ -33,6 +33,9 @@ instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
         when (n > q) $ throwM QuotaError
         return ((), Quota (q - n))
 
+instance (MonadThrow m) => MonadThrow (QuotaT m) where
+    throwM = lift . throwM
+
 instance MonadTrans QuotaT where
     lift m = QuotaT $ \q -> do
         ret <- m
