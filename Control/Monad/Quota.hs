@@ -6,6 +6,7 @@ module Control.Monad.Quota where
 
 import Control.Monad.Catch (throwM, MonadThrow, Exception)
 import Control.Monad (when)
+import Control.Monad.Trans.Class (MonadTrans(..))
 
 data QuotaError
     = QuotaError
@@ -31,6 +32,11 @@ instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
     invoice n = QuotaT $ \(Quota q) -> do
         when (n > q) $ throwM QuotaError
         return ((), Quota (q - n))
+
+instance MonadTrans QuotaT where
+    lift m = QuotaT $ \q -> do
+        ret <- m
+        return (ret, q)
 
 -- These are just the standard ways of derving Applicative & Functor
 -- from Monad; nothing quota-specific going on here:
