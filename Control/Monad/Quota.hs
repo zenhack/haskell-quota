@@ -7,7 +7,7 @@ module Control.Monad.Quota where
 -- and more straightforward this way than trying to reuse StateT.
 
 import Control.Monad.Catch (throwM, MonadThrow, Exception)
-import Control.Monad (when)
+import Control.Monad (when, ap)
 import Control.Monad.Trans.Class (MonadTrans(..))
 
 import Control.Monad.State (MonadState(..))
@@ -49,10 +49,7 @@ instance MonadTrans QuotaT where
 -- from Monad; nothing quota-specific going on here:
 instance (Monad m) => Applicative (QuotaT m) where
     pure = return
-    f <*> x = do
-        x' <- x
-        f' <- f
-        return (f' x')
+    (<*>) = ap
 instance (Monad m, Applicative m) => Functor (QuotaT m) where
     fmap f q = pure f <*> q
 
