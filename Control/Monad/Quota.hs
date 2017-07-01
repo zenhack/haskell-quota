@@ -60,3 +60,6 @@ instance MonadState s m => MonadState s (QuotaT m) where
     get = lift get
     put = lift . put
     state = lift . state
+
+evalQuotaT :: (Monad m, Applicative m) => QuotaT m a -> Quota -> m a
+evalQuotaT qt q = fst <$> runQuotaT qt q
