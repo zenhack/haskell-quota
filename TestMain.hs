@@ -9,6 +9,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (oneof, Gen)
 
+arbitraryNat :: Gen Int
 arbitraryNat = abs <$> arbitrary
 
 data QuotaOp = Invoice Int
