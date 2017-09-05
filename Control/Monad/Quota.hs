@@ -1,16 +1,12 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,
-    UndecidableInstances #-}
+    UndecidableInstances, GeneralizedNewtypeDeriving #-}
 module Control.Monad.Quota where
 
--- NOTE: QuotaT basically re-implements the state monad internally. I
--- (zenhack) have found that the code actually ends up being shorter
--- and more straightforward this way than trying to reuse StateT.
-
 import Control.Monad.Catch (throwM, MonadThrow, Exception)
-import Control.Monad (when, ap)
+import Control.Monad (when)
 import Control.Monad.Trans.Class (MonadTrans(..))
 
-import Control.Monad.State (MonadState(..))
+import Control.Monad.State (StateT, runStateT, evalStateT, MonadState(..))
 
 data QuotaError
     = QuotaError
@@ -24,42 +20,27 @@ newtype Quota = Quota Int
 class MonadQuota m where
     invoice :: Int -> m ()
 
-newtype QuotaT m a = QuotaT { runQuotaT :: Quota -> m (a, Quota) }
+newtype QuotaT m a = QuotaT (StateT Quota m a)
+    deriving(Functor, Applicative, Monad)
 
-instance (Monad m) => Monad (QuotaT m) where
-    return x = QuotaT $ \q -> return (x, q)
-    QuotaT r >>= f = QuotaT $ \q -> do
-        (ret, q') <- r q
-        runQuotaT (f ret) q'
+runQuotaT :: QuotaT m a -> Quota -> m (a, Quota)
+runQuotaT (QuotaT st) = runStateT st
 
 instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
-    invoice n = QuotaT $ \(Quota q) -> do
+    invoice n = QuotaT $ do
+        Quota q <- get
         when (n > q) $ throwM QuotaError
-        return ((), Quota (q - n))
+        put $ Quota (q - n)
 
 instance (MonadThrow m) => MonadThrow (QuotaT m) where
-    throwM = lift . throwM
+    throwM = QuotaT . lift . throwM
 
 instance MonadTrans QuotaT where
-    lift m = QuotaT $ \q -> do
-        ret <- m
-        return (ret, q)
-
--- These are just the standard ways of derving Applicative & Functor
--- from Monad; nothing quota-specific going on here:
-instance (Monad m) => Applicative (QuotaT m) where
-    pure = return
-    (<*>) = ap
-instance (Monad m, Applicative m) => Functor (QuotaT m) where
-    fmap f q = pure f <*> q
-
-
--- Misc. mtl type class instances:
+    lift = QuotaT . lift
 
 instance MonadState s m => MonadState s (QuotaT m) where
     get = lift get
     put = lift . put
-    state = lift . state
 
 evalQuotaT :: (Monad m, Applicative m) => QuotaT m a -> Quota -> m a
-evalQuotaT qt q = fst <$> runQuotaT qt q
+evalQuotaT (QuotaT st) q = evalStateT st q
