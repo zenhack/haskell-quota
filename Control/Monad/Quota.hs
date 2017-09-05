@@ -33,7 +33,7 @@ instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
         put $ Quota (q - n)
 
 instance (MonadThrow m) => MonadThrow (QuotaT m) where
-    throwM = QuotaT . lift . throwM
+    throwM = lift . throwM
 
 instance MonadTrans QuotaT where
     lift = QuotaT . lift
