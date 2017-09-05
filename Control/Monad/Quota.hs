@@ -26,7 +26,7 @@ newtype QuotaT m a = QuotaT (StateT Quota m a)
 runQuotaT :: QuotaT m a -> Quota -> m (a, Quota)
 runQuotaT (QuotaT st) = runStateT st
 
-instance (Monad m, MonadThrow m) => MonadQuota (QuotaT m) where
+instance MonadThrow m => MonadQuota (QuotaT m) where
     invoice n = QuotaT $ do
         Quota q <- get
         when (n > q) $ throwM QuotaError
