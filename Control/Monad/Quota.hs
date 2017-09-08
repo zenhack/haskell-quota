@@ -15,7 +15,7 @@ data QuotaError
 instance Exception QuotaError
 
 newtype Quota = Quota Int
-              deriving(Show, Eq)
+              deriving(Show, Eq, Num)
 
 class MonadQuota m where
     invoice :: Int -> m ()
