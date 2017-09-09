@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses,
     UndecidableInstances, GeneralizedNewtypeDeriving #-}
-module Control.Monad.Quota where
+module Control.Monad.Quota
+    ( Quota(..)
+    , QuotaError(..)
+    , QuotaT
+    , MonadQuota(..)
+    , runQuotaT
+    , evalQuotaT
+    )
+  where
 
 import Control.Monad.Catch (throwM, MonadThrow, Exception)
 import Control.Monad (when)
