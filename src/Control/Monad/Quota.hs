@@ -16,6 +16,7 @@ import Control.Monad (when)
 import Control.Monad.Trans.Class (MonadTrans(..))
 
 import Control.Monad.State (StateT, runStateT, evalStateT, MonadState(..))
+import Control.Monad.Writer (MonadWriter(..), WriterT)
 
 -- | An exception indicating that the quota was exceeded.
 data QuotaError
@@ -33,7 +34,7 @@ newtype Quota = Quota Int
 -- laws:
 --
 -- * @invoice 0 >> m = m@
-class MonadQuota m where
+class Monad m => MonadQuota m where
     -- | @invoice n@ deducts @n@ from the quota.
     invoice :: Int -> m ()
 
@@ -59,11 +60,24 @@ instance (MonadThrow m) => MonadThrow (QuotaT m) where
 instance MonadTrans QuotaT where
     lift = QuotaT . lift
 
-instance MonadState s m => MonadState s (QuotaT m) where
-    get = lift get
-    put = lift . put
-
 -- | Like 'runQuotaT', but only returns the monadic result (not the remaining
 -- quota).
 evalQuotaT :: (Monad m, Applicative m) => QuotaT m a -> Quota -> m a
 evalQuotaT (QuotaT st) q = evalStateT st q
+
+------ # Instances of standard mtl type classes, with QuotaT on the outside:
+
+instance MonadState s m => MonadState s (QuotaT m) where
+    get = lift get
+    put = lift . put
+
+instance MonadWriter w m => MonadWriter w (QuotaT m) where
+    tell = lift . tell
+
+------ # Instances of MonadQuota for standard monad transformers:
+
+instance MonadQuota m => MonadQuota (StateT s m) where
+    invoice = lift . invoice
+
+instance (Monoid w, MonadQuota m) => MonadQuota (WriterT w m) where
+    invoice = lift . invoice
