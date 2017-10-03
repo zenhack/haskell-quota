@@ -16,7 +16,9 @@ import Control.Monad (when)
 import Control.Monad.Trans.Class (MonadTrans(..))
 
 import Control.Monad.State (StateT, runStateT, evalStateT, MonadState(..))
+import Control.Monad.Reader (MonadReader(..), ReaderT)
 import Control.Monad.Writer (MonadWriter(..), WriterT)
+import Control.Monad.RWS (MonadRWS(..), RWST)
 
 -- | An exception indicating that the quota was exceeded.
 data QuotaError
@@ -73,6 +75,14 @@ instance MonadState s m => MonadState s (QuotaT m) where
 
 instance MonadWriter w m => MonadWriter w (QuotaT m) where
     tell = lift . tell
+    -- TODO: add 'listen' and 'pass'
+
+instance MonadReader r m => MonadReader r (QuotaT m) where
+    ask = lift ask
+    reader = lift . reader
+    -- TODO: add 'local'
+
+instance MonadRWS r w s m => MonadRWS r w s (QuotaT m)
 
 ------ # Instances of MonadQuota for standard monad transformers:
 
@@ -80,4 +90,10 @@ instance MonadQuota m => MonadQuota (StateT s m) where
     invoice = lift . invoice
 
 instance (Monoid w, MonadQuota m) => MonadQuota (WriterT w m) where
+    invoice = lift . invoice
+
+instance MonadQuota m => MonadQuota (ReaderT r m) where
+    invoice = lift . invoice
+
+instance (Monoid w, MonadQuota m) => MonadQuota (RWST r w s m) where
     invoice = lift . invoice
