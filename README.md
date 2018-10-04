@@ -1,3 +1,7 @@
+**Unmaintained**. This package was originally written for use with [haskell-capnp][1],
+but the relevant functionality [has been folded into that package][2], so this is no
+longer used.
+
 Haskell library to track quota usage.
 
 # Why
@@ -30,3 +34,4 @@ vulnerability.
 Apache 2.0
 
 [1]: https://github.com/zenhack/haskell-capnp
+[2]: http://hackage.haskell.org/package/capnp-0.3.0.0/docs/Data-Capnp-TraversalLimit.html
